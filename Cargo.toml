@@ -1,0 +1,73 @@
+[package]
+name = "symmetry-demo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.89"
+config = "0.14.0"
+dotenv = "0.15.0"
+http = "0.2.8"
+jwt-simple = "0.11.4"
+log = "0.4.22"
+pretty_env_logger = "0.5.0"
+rand = "0.8.5"
+serde_json = "1.0.94"
+quick-xml = { version = "0.39.0", features = ["serialize", "serde"] }
+textnonce = "1.0.0"
+thiserror = "1.0.64"
+
+# Custom Libs/Forks
+# had to fork and add in functionality for Shopify's extensions key (when multi-threading)
+gql_client = { git = "https://github.com/malibuiconic/gql-client-rs.git", branch = "master" }
+
+# NAV / MSSQL (Grundens)
+tiberius   = { version = "0.12", features = ["native-tls"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+
+# Malibu's Shopify API Tooling Lib
+malibus_shopifyapi_tooling = { version = "0.1.0", path ="/home/malibu/code/hydrafacial/hydrafacial-us-b2b/malibus_shopifyapi_tooling" }
+
+[dependencies.chrono]
+version = "0.4.23"
+features = ["serde"]
+
+[dependencies.reqwest]
+version = "0.11.14"
+features = ["json"]
+
+[dependencies.serde]
+version = "1.0.210"
+features = ["derive"]
+
+[dependencies.sqlx]
+version = "0.8"
+features = ["runtime-tokio", "sqlite", "chrono", "uuid", "macros"]
+
+[dependencies.tokio]
+version = "1.40.0"
+features = ["full"]
+
+[dependencies.uuid]
+version = "1.2.2"
+features = ["v4"]
+
+[dependencies.warp]
+version = "0.3.3"
+features = ["tls"]
+
+# Simplified bin section (remove all the unnecessary fields)
+[[bin]]
+name = "shopify_app"
+path = "src/main.rs"
+
+# Release Build - Optimizations
+[profile.release]
+opt-level = "z"     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = "abort"     # Abort on panic
+strip = true        # Automatically strip symbols from the binary.
+
+# Remove all profile sections - they're now in workspace root
+

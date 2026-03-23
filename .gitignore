@@ -1,0 +1,21 @@
+# Rust files
+target/
+Cargo.lock
+
+# Environment files
+.gitignore
+.env
+.env.local
+
+# Database files
+data/
+*.db
+*.db-shm
+*.db-wal
+loyalty_app.db*
+
+# SQLite query cache (if using macros)
+.sqlx/
+
+# Logs
+*.log

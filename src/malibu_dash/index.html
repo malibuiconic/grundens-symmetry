@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symmetry Commerce Dashboard</title>
+    <style>
+        /* Reset and dark background to match the Castlevania vibe */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0a0a1a; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .splash-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .splash-image {
+            /* Keeps the 8-bit pixels crisp instead of blurry when scaled */
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            
+            /* Responsive constraints */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        #nav-status-panel {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 9999;
+      background: #0a0a0f;
+      border: 1px solid #00ffe7;
+      box-shadow: 0 0 16px #00ffe740, 0 0 2px #00ffe7;
+      border-radius: 6px;
+      padding: 12px 16px;
+      min-width: 280px;
+      max-width: 380px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #c0f0e8;
+    }
+    #nav-status-panel h4 {
+      margin: 0 0 10px 0;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #00ffe7;
+    }
+    .nav-db-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .nav-db-label {
+      flex: 1;
+      color: #7ad4c8;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .nav-dot.ok   { background: #00ff9f; box-shadow: 0 0 6px #00ff9f; }
+    .nav-dot.fail { background: #ff3c5a; box-shadow: 0 0 6px #ff3c5a; }
+    .nav-dot.spin { background: #ffca28; box-shadow: 0 0 6px #ffca28; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .nav-status-msg {
+      font-size: 10px;
+      color: #4a8a80;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+    .nav-links {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+    .nav-links a {
+      font-size: 10px;
+      color: #00ffe7;
+      text-decoration: none;
+      border: 1px solid #00ffe740;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+    .nav-links a:hover { background: #00ffe715; }
+    #nav-panel-toggle {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #4a8a80;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+    #nav-panel-toggle:hover { color: #00ffe7; }
+    </style>
+</head>
+<body>
+
+    <!--
+    <div class="splash-container">
+        <img src="./malibu_dash/img_assets/symmetrysplash.png" alt="Symmetry Commerce Dashboard" class="splash-image">
+    </div>
+    -->
+    <div id="app"></div>
+
+    <!-- NAV DB Status Panel -->
+    <div id="nav-status-panel">
+      <button id="nav-panel-toggle" title="Collapse">−</button>
+      <h4>⬡ Grundens NAV DB</h4>
+      <div id="nav-status-content">
+        <div class="nav-db-row">
+          <span class="nav-dot spin" id="dot-nav18"></span>
+          <span class="nav-db-label">NAV18 (GRUS)</span>
+        </div>
+        <div class="nav-db-row">
+          <span class="nav-dot spin" id="dot-integration"></span>
+          <span class="nav-db-label">Integration DB</span>
+        </div>
+        <div class="nav-status-msg" id="nav-status-msg">Probing...</div>
+      </div>
+      <div class="nav-links">
+        <a href="/api/nav/status"    target="_blank">status</a>
+        <a href="/api/nav/items"     target="_blank">items</a>
+        <a href="/api/nav/inventory" target="_blank">inventory</a>
+      </div>
+    </div>
+
+    <script>
+      // Toggle collapse
+      const panel   = document.getElementById('nav-status-panel');
+      const content = document.getElementById('nav-status-content');
+      const links   = panel.querySelector('.nav-links');
+      const toggle  = document.getElementById('nav-panel-toggle');
+      toggle.addEventListener('click', () => {
+        const collapsed = content.style.display === 'none';
+        content.style.display = collapsed ? '' : 'none';
+        links.style.display   = collapsed ? '' : 'none';
+        toggle.textContent    = collapsed ? '−' : '+';
+      });
+
+      // Probe NAV status
+      async function checkNav() {
+        const dot18  = document.getElementById('dot-nav18');
+        const dotInt = document.getElementById('dot-integration');
+        const msg    = document.getElementById('nav-status-msg');
+        try {
+          const res  = await fetch('/api/nav/status');
+          const data = await res.json();
+
+          function applyStatus(dot, status) {
+            dot.className = 'nav-dot ' + (status.connected ? 'ok' : 'fail');
+          }
+          applyStatus(dot18,  data.nav18);
+          applyStatus(dotInt, data.integration);
+
+          if (data.nav18.connected && data.integration.connected) {
+            msg.style.color = '#00ff9f';
+            msg.textContent = 'Both DBs reachable ✓';
+          } else if (!data.nav18.connected && !data.integration.connected) {
+            msg.style.color = '#ff3c5a';
+            msg.textContent = 'VPN required — ' + (data.nav18.message || 'unreachable');
+          } else {
+            msg.style.color = '#ffca28';
+            const failed = !data.nav18.connected ? data.nav18 : data.integration;
+            msg.textContent = failed.database + ': ' + failed.message;
+          }
+        } catch (e) {
+          dot18.className = dotInt.className = 'nav-dot fail';
+          msg.style.color = '#ff3c5a';
+          msg.textContent = 'Server unreachable: ' + e.message;
+        }
+      }
+
+      checkNav();
+      // Re-check every 60 seconds
+      setInterval(checkNav, 60_000);
+    </script>
+</body>
+</html>
