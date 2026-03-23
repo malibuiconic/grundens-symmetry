@@ -65,7 +65,7 @@ fn build_config(env: &NavEnv, database: &str) -> Config {
     cfg.database(database);
     cfg.authentication(AuthMethod::sql_server(&env.user, &env.password));
     cfg.encryption(EncryptionLevel::Required);
-    cfg.trust_cert_ca(false);
+    cfg.trust_cert();
     cfg
 }
 
@@ -110,6 +110,26 @@ async fn probe(env: &NavEnv, database: &str) -> DbConnectionStatus {
             message: format!("Connection failed: {e}"),
             server_version: None,
         },
+    }
+}
+
+// ── Startup check ─────────────────────────────────────────────────────────────
+
+pub async fn check_nav_connections(cfg: &EnvConfig) {
+    let env = NavEnv::from_config(cfg);
+    let (nav18, integration) = tokio::join!(
+        probe(&env, &cfg.nav_sql_db_nav18),
+        probe(&env, &cfg.nav_sql_db_integration),
+    );
+    if nav18.connected {
+        info!("NAV18 DB connected ({})", nav18.database);
+    } else {
+        error!("NAV18 DB connection failed: {}", nav18.message);
+    }
+    if integration.connected {
+        info!("Integration DB connected ({})", integration.database);
+    } else {
+        error!("Integration DB connection failed: {}", integration.message);
     }
 }
 

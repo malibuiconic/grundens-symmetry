@@ -23,6 +23,7 @@ use crate::sqlite::databaseFunctionality::Database;
 use crate::nav::handle_nav_status;
 use crate::nav::handle_nav_items;
 use crate::nav::handle_nav_inventory;
+use crate::nav::check_nav_connections;
 
 /*
 // Loyalty Endpoints
@@ -128,6 +129,10 @@ async fn main() -> Result<()> {
 
     // setup environment variables
     let app_env = EnvConfig::env_variables().unwrap();
+
+    // Test NAV DB connections at startup
+    info!("Checking Grundens NAV DB connections...");
+    check_nav_connections(&app_env).await;
     // init port setup for hosting environment (GCP/Linode/Docker or whatever)
     let port = match std::env::var("SERVER_PORT") {
         Ok(port) => port,
