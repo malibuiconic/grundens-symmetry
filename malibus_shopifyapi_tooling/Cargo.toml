@@ -1,0 +1,26 @@
+[package]
+name = "malibus_shopifyapi_tooling"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Environment Variables
+config = "0.14.0" # not using newer versions with builder.. found this easier ;)
+dotenv = "0.15.0"
+# Server / Runtime
+tokio = { version = "1.39.3", features = ["full"] } # Serialization / Deserialization
+serde = {version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+# Error Handling and QA, Logging
+anyhow = "1.0.87"
+thiserror = "1.0.63"
+# Web Fetch Libs
+reqwest = { version = "0.12.7", features = ["json"] }
+http = "1.1.0"
+# gql_client = "1.0.7"
+# had to fork and add in functionality for Shopify's extensions key (when multi-threading)
+gql_client = { git = "https://github.com/malibuiconic/gql-client-rs.git", branch = "master" }
+# Time
+chrono = { version = "0.4.38", features=["serde"] }

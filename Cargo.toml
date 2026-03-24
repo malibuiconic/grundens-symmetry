@@ -2,9 +2,11 @@
 name = "symmetry-demo"
 version = "0.1.0"
 edition = "2024"
+default-run = "shopify_app"
 
 [dependencies]
 anyhow = "1.0.89"
+csv = "1.3"
 config = "0.14.0"
 dotenv = "0.15.0"
 http = "0.2.8"
@@ -26,7 +28,7 @@ tiberius   = { version = "0.12", features = ["native-tls"] }
 tokio-util = { version = "0.7", features = ["compat"] }
 
 # Malibu's Shopify API Tooling Lib
-malibus_shopifyapi_tooling = { version = "0.1.0", path ="/home/malibu/code/hydrafacial/hydrafacial-us-b2b/malibus_shopifyapi_tooling" }
+malibus_shopifyapi_tooling = { version = "0.1.0", path = "malibus_shopifyapi_tooling" }
 
 [dependencies.chrono]
 version = "0.4.23"

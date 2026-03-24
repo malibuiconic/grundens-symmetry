@@ -165,7 +165,7 @@ pub async fn handle_nav_items(app_env: EnvConfig) -> Result<impl Reply, Rejectio
             [No_]                        AS sku,
             [Description]                AS description,
             CAST([Unit Price] AS float)  AS unit_price
-        FROM [GRUS$Item]
+        FROM [GRUS$Item] WITH (NOLOCK)
         WHERE [Blocked] = 0
         ORDER BY [No_]
     ";
@@ -199,8 +199,8 @@ pub async fn handle_nav_inventory(app_env: EnvConfig) -> Result<impl Reply, Reje
         SELECT TOP 20
             i.[No_]                                         AS sku,
             CAST(ISNULL(SUM(ile.[Quantity]), 0) AS bigint)  AS qty_on_hand
-        FROM [GRUS$Item] i
-        LEFT JOIN [GRUS$Item Ledger Entry] ile
+        FROM [GRUS$Item] i WITH (NOLOCK)
+        LEFT JOIN [GRUS$Item Ledger Entry] ile WITH (NOLOCK)
             ON  ile.[Item No_]      = i.[No_]
             AND ile.[Location Code] = 'TAC'
         WHERE i.[Blocked] = 0

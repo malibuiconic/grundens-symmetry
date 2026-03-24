@@ -23,7 +23,13 @@ use crate::sqlite::databaseFunctionality::Database;
 use crate::nav::handle_nav_status;
 use crate::nav::handle_nav_items;
 use crate::nav::handle_nav_inventory;
-use crate::nav::check_nav_connections;
+// use crate::nav::check_nav_connections;
+
+// Pricing Export
+use crate::pricing::{
+    handle_pricing_ui, handle_generate, handle_list_csvs,
+    handle_download_csv, handle_delete_csv,
+};
 
 /*
 // Loyalty Endpoints
@@ -58,6 +64,7 @@ mod envconfig;     // environment variable(s) handler
 mod shopify;       // shopify context
 mod sqlite;        // database/session storage
 mod nav;           // Grundens NAV18 direct SQL
+mod pricing;       // pricing CSV export + management UI
 
 // mod discounting;
 // mod cart_transform; // cart transform management
@@ -130,9 +137,10 @@ async fn main() -> Result<()> {
     // setup environment variables
     let app_env = EnvConfig::env_variables().unwrap();
 
-    // Test NAV DB connections at startup
-    info!("Checking Grundens NAV DB connections...");
-    check_nav_connections(&app_env).await;
+    // NAV DB connectivity is verified on-demand (pricing export, /api/nav/* routes).
+    // Removed startup probe — malibudev's IP is not whitelisted in Azure SQL firewall
+    // and the probe goes direct rather than through the SSH tunnel, causing noise in
+    // Grundens' Azure audit logs.
     // init port setup for hosting environment (GCP/Linode/Docker or whatever)
     let port = match std::env::var("SERVER_PORT") {
         Ok(port) => port,
@@ -357,7 +365,40 @@ async fn main() -> Result<()> {
         .and(with_config(app_env.clone()))
         .and_then(handle_nav_inventory);
 
-    let nav_routes = nav_status.or(nav_items).or(nav_inventory);    
+    let nav_routes = nav_status.or(nav_items).or(nav_inventory);
+
+    // ---------------------------------------------------------------------------
+    // Pricing Export Routes  (/pricing, /api/pricing/*)
+    // Shopify + NAV18 pricing merge → Matrixify CSV management UI
+    // ---------------------------------------------------------------------------
+    let pricing_ui = warp::path("pricing")
+        .and(warp::get())
+        .and(warp::path::end())
+        .and_then(handle_pricing_ui);
+
+    let pricing_generate = warp::path!("api" / "pricing" / "generate")
+        .and(warp::post())
+        .and(with_config(app_env.clone()))
+        .and(with_database(db.clone()))
+        .and_then(handle_generate);
+
+    let pricing_list = warp::path!("api" / "pricing" / "csvs")
+        .and(warp::get())
+        .and_then(handle_list_csvs);
+
+    let pricing_download = warp::path!("api" / "pricing" / "csv" / String)
+        .and(warp::get())
+        .and_then(handle_download_csv);
+
+    let pricing_delete = warp::path!("api" / "pricing" / "csv" / String)
+        .and(warp::delete())
+        .and_then(handle_delete_csv);
+
+    let pricing_routes = pricing_ui
+        .or(pricing_generate)
+        .or(pricing_list)
+        .or(pricing_download)
+        .or(pricing_delete);
 
     // Health check route
     let health_route =
@@ -371,6 +412,7 @@ async fn main() -> Result<()> {
         //.or(cart_transform_routes)
         //.or(config_routes)
         .or(nav_routes)
+        .or(pricing_routes)
         .or(health_route)
         .with(
             warp::cors()
